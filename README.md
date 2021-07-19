@@ -1,4 +1,4 @@
-# Mesh Transformer JAX
+# Mesh Transformer JAX (JR Oakes)
 
 A haiku library using the `xmap`/`pjit` operators in JAX for model parallelism of transformers.
 
