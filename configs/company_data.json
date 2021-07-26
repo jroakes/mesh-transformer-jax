@@ -12,12 +12,12 @@
   "per_replica_batch": 1,
   "gradient_accumulation_steps": 16,
 
-  "warmup_steps": 2,
-  "anneal_steps": 8,
+  "warmup_steps": 4,
+  "anneal_steps": 18,
   "lr": 5e-5,
   "end_lr": 1e-5,
   "weight_decay": 0.1,
-  "total_steps": 10,
+  "total_steps": 22,
 
   "tpu_size": 8,
 
@@ -29,10 +29,10 @@
 
   "eval_harness_tasks": [
   ],
-  
+
   "val_batches": 100,
   "val_every": 5000000,
-  "ckpt_every": 500,
+  "ckpt_every": 44,
   "keep_every": 10000,
 
   "name": "company_data",
