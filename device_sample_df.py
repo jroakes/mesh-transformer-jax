@@ -23,8 +23,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=None, help="Config file location")
     parser.add_argument("--sample_file", type=str, default=None, help="Pandas DataFrame")
-    parser.add_argument("--prompt_column", str, default='prompt', help="Pandas DataFrame")
-    parser.add_argument("--num_samples", int, default=10, help="Pandas DataFrame")
+    parser.add_argument("--prompt_column", type=str, default='prompt', help="Pandas DataFrame")
+    parser.add_argument("--num_samples", type=int, default=10, help="Pandas DataFrame")
     args = parser.parse_args()
     return args
 
@@ -76,8 +76,12 @@ if __name__ == "__main__":
     ckpt_step = meta["checkpoints"][-1]
     print(f"using checkpoint {ckpt_step}")
 
-    total_batch = per_replica_batch * jax.device_count() // cores_per_replica
+    samples_df = pd.read_csv(sample_file)
+    samples = random.choices(samples_df[prompt_column].tolist(), k=num_samples)
+    df_result = pd.DataFrame()
 
+    total_batch = per_replica_batch * jax.device_count() // cores_per_replica
+    
     with jax.experimental.maps.mesh(devices, ('dp', 'mp')):
         network = CausalTransformer(params)
 
@@ -90,10 +94,6 @@ if __name__ == "__main__":
         network.state = network.move_xmap(network.state, np.zeros(local_shards))
 
         tokenizer = transformers.GPT2TokenizerFast.from_pretrained('gpt2')
-        samples_df = pd.read_csv(sample_file)
-        samples = random.choices(samples_df[prompt_column].tolist(), k=num_samples)
-
-        df_result = pd.DataFrame()
 
         for sample in samples:
 
@@ -119,5 +119,5 @@ if __name__ == "__main__":
 
             print(f"completion done in {time.time() - start:06}s")
 
-        df_result.to_csv('result_'+sample_file, index=None)
-        print('Output Saved:', 'result_'+sample_file)
+    df_result.to_csv('result_'+sample_file, index=None)
+    print('Output Saved:', 'result_'+sample_file)
