@@ -81,7 +81,7 @@ if __name__ == "__main__":
     df_result = pd.DataFrame()
 
     total_batch = per_replica_batch * jax.device_count() // cores_per_replica
-    
+
     with jax.experimental.maps.mesh(devices, ('dp', 'mp')):
         network = CausalTransformer(params)
 
@@ -111,8 +111,11 @@ if __name__ == "__main__":
             output = network.generate(batched_tokens, length, 512, {"top_p": np.ones(total_batch) * 0.9,
                                                                     "temp": np.ones(total_batch) * 0.75})
             samples = []
-            encoded_tokens = output[1][0][:, :, 0][0]
-            decoded_tokens = tokenizer.decode(decoded_tokens)
+            encoded_tokens = list(utput[1][0][:, :, 0][0])
+
+            stop_idx = encoded_tokens.index(2048) if 2048 in encoded_tokens else len(encoded_tokens)
+            decoded_tokens = tokenizer.decode(encoded_tokens[:stop_idx])
+
             print('Decoded Tokens:', decoded_tokens)
             print()
             df_result = df_result.append({'prompt': sample, 'predicted':decoded_tokens}, ignore_index=True)
