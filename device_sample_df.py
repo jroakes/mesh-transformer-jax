@@ -111,7 +111,7 @@ if __name__ == "__main__":
             output = network.generate(batched_tokens, length, 512, {"top_p": np.ones(total_batch) * 0.9,
                                                                     "temp": np.ones(total_batch) * 0.75})
             samples = []
-            encoded_tokens = list(utput[1][0][:, :, 0][0])
+            encoded_tokens = list(output[1][0][:, :, 0][0])
 
             stop_idx = encoded_tokens.index(2048) if 2048 in encoded_tokens else len(encoded_tokens)
             decoded_tokens = tokenizer.decode(encoded_tokens[:stop_idx])
