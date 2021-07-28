@@ -25,6 +25,9 @@ def parse_args():
     parser.add_argument("--sample_file", type=str, default=None, help="Pandas DataFrame")
     parser.add_argument("--prompt_column", type=str, default='prompt', help="Pandas DataFrame")
     parser.add_argument("--num_samples", type=int, default=10, help="Pandas DataFrame")
+    parser.add_argument("--temp", type=float, default=0.5, help="Prediction Temperature")
+    parser.add_argument("--top_p", type=float, default=0.9, help="Prediction Top-P")
+    parser.add_argument("--max_len", type=int, default=300, help="Prediction Max Length")
     args = parser.parse_args()
     return args
 
@@ -35,6 +38,9 @@ if __name__ == "__main__":
     sample_file = args.sample_file
     prompt_column = args.prompt_column
     num_samples = args.num_samples
+    pred_temp = args.temp
+    pred_top_p = args.top_p
+    pred_max_len = args.max_len
 
     gradient_accumulation_steps = params.get("gradient_accumulation_steps", 1)
     per_replica_batch = params["per_replica_batch"]
@@ -106,15 +112,14 @@ if __name__ == "__main__":
 
             padded_tokens = np.pad(tokens, ((pad_amount, 0),)).astype(np.uint32)
             batched_tokens = np.array([padded_tokens] * total_batch)
-            length = np.ones(total_batch, dtype=np.uint32) * len(tokens)
+            length = np.ones(total_batch, dtype=np.uint32) * pred_max_len
 
-            output = network.generate(batched_tokens, length, 512, {"top_p": np.ones(total_batch) * 0.8,
-                                                                    "temp": np.ones(total_batch) * 0.6,
-                                                                    "gen_len": np.ones(total_batch) * 300})
+            output = network.generate(batched_tokens, length, 512, {"top_p": np.ones(total_batch) * pred_top_p,
+                                                                    "temp": np.ones(total_batch) * pred_temp})
             samples = []
             encoded_tokens = list(output[1][0][:, :, 0][0])
 
-            stop_idx = encoded_tokens.index(2048) if 2048 in encoded_tokens else len(encoded_tokens)
+            stop_idx = encoded_tokens.index(tokenizer.eos_token_id) if tokenizer.eos_token_id in encoded_tokens else len(encoded_tokens)
             decoded_tokens = tokenizer.decode(encoded_tokens[:stop_idx])
 
             print('Decoded Tokens:', decoded_tokens)

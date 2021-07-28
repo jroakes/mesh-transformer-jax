@@ -1,1 +1,1 @@
-gs://gpt-j-finetuning-europe/datasets/company_data/company_data_0_19.tfrecords
+gs://gpt-j-finetuning-europe/datasets/company_data/company_data_train.tfrecords
