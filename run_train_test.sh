@@ -1,5 +1,5 @@
 cd ..
-rm -r mesh-transformer-jax || true
+rm -rf mesh-transformer-jax || true
 
 git clone https://github.com/jroakes/mesh-transformer-jax.git
 cd mesh-transformer-jax
