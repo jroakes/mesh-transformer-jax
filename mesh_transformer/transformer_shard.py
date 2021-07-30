@@ -184,17 +184,33 @@ class CausalTransformer:
 
         def generate(state, key, ctx, ctx_length, aux, sampler_options):
             sampler = config["sampler"]
+            repetition_penalty = config["repetition_penalty"] # Remove to clear rep pen
             gen_length = self.gen_length
 
             def generate_sample(context, ctx_length, aux):
                 transformer = CausalTransformerShard(config)
                 _, initial_state = transformer.generate_initial(context, ctx_length)
 
+                # Remove to clear rep pen
+                def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty):
+                    # create logit penalties for already seen input_ids
+                    token_penalties = np.ones(shape_list(logits))
+                    prev_input_ids = [np.unique(input_id) for input_id in input_ids.numpy()]
+                    for i, prev_input_id in enumerate(prev_input_ids):
+                        logit_penalized = logits[i].numpy()[prev_input_id]
+                        logit_penalties = np.zeros(logit_penalized.shape)
+                        # if previous logit score is < 0 then multiply repetition penalty else divide
+                        logit_penalties[logit_penalized < 0] = repetition_penalty
+                        logit_penalties[logit_penalized > 0] = 1 / repetition_penalty
+                        np.put(token_penalties[i], prev_input_id, logit_penalties)
+                    return tf.convert_to_tensor(token_penalties, dtype=tf.float32)
+
                 def generate_scan_fn(carry, sampler_input):
                     next_token, decode_state, sample_key = carry
                     sample_key, new_key = jax.random.split(sample_key)
 
                     logits, new_state = transformer.generate_once(next_token, decode_state)
+                    logits = _create_next_token_logits_penalties(ctx, logits, repetition_penalty) # Remove to clear rep pen
                     next_token, sample_info = sampler(sample_key, logits, sampler_input, **sampler_options)
 
                     if self.return_logits:

@@ -126,12 +126,20 @@ if __name__ == "__main__":
             print('Ouput generations:', len(output[1][0][:, :, 0]))
             encoded_tokens = list(output[1][0][:, :, 0][0])
 
-            stop_idx = encoded_tokens.index(tokenizer.eos_token_id) if tokenizer.eos_token_id in encoded_tokens else len(encoded_tokens)
+            end_tokens = [198, 50256] # \n or <|endoftext|>
+            stop_idx = len(encoded_tokens)
+            for end_token in end_tokens:
+                if end_token in encoded_tokens:
+                    stop_idx = encoded_tokens.index(tokenizer.eos_token_id)
+                    break
+
             decoded_tokens = tokenizer.decode(encoded_tokens[:stop_idx])
 
             print('Decoded Tokens:', decoded_tokens)
             print()
+
             df_result = df_result.append({'prompt': sample, 'predicted':decoded_tokens}, ignore_index=True)
+
 
             print(f"completion done in {time.time() - start:06}s")
 

@@ -18,6 +18,7 @@
   "end_lr": 3e-5,
   "weight_decay": 0.1,
   "total_steps": 2,
+  "repetition_penalty": 1.2,
 
   "tpu_size": 8,
 
