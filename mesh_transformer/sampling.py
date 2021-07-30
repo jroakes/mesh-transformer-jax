@@ -38,7 +38,12 @@ def nucleaus_filter(logits, top_p=0.9, top_k=None):
     return logits
 
 
-def nucleaus_sample(key, logits, _, top_p=0.9, temp=1, top_k=None):
+def nucleaus_sample(key, logits, _, sampler_options):
+
+    top_p = sampler_options.get('top_p', 0.9)
+    temp = sampler_options.get('temp', 1)
+    top_k = sampler_options.get('top_k', None)
+
     logits = nucleaus_filter(logits, top_p, top_k=top_k)
 
     return softmax_sample(key, logits, None, temp=temp)

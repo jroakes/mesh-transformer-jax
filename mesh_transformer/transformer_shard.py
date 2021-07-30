@@ -193,11 +193,14 @@ class CausalTransformer:
                 _, initial_state = transformer.generate_initial(context, ctx_length)
 
                 # Remove to clear rep pen
-                def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty=1.2):
+                def _create_next_token_logits_penalties(input_ids, logits, sampler_options):
+
+                    repetition_penalty = sampler_options.get('repetition_penalty', None)
+
                     # create logit penalties for already seen input_ids
                     token_penalties = np.ones(shape_list(logits))
 
-                    if repetition_penalty != 1.0:
+                    if repetition_penalty:
                         prev_input_ids = [np.unique(input_id) for input_id in input_ids.numpy()]
                         for i, prev_input_id in enumerate(prev_input_ids):
                             logit_penalized = logits[i].numpy()[prev_input_id]
@@ -216,11 +219,11 @@ class CausalTransformer:
                     logits, new_state = transformer.generate_once(next_token, decode_state)
 
                     # Repition Penalty
-                    penalties = _create_next_token_logits_penalties(ctx, logits, **sampler_options)
+                    penalties = _create_next_token_logits_penalties(ctx, logits, sampler_options)
                     logits = jnp.multiply(logits, penalties)
 
                      # Remove to clear rep pen
-                    next_token, sample_info = sampler(sample_key, logits, sampler_input, **sampler_options)
+                    next_token, sample_info = sampler(sample_key, logits, sampler_input, sampler_options)
 
                     if self.return_logits:
                         output = (next_token, sample_info, logits)
