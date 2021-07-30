@@ -23,8 +23,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=None, help="Config file location")
     parser.add_argument("--sample_file", type=str, default=None, help="Pandas DataFrame")
-    parser.add_argument("--prompt_column", type=str, default='prompt', help="Pandas DataFrame")
+    parser.add_argument("--prompt_column", type=str, default='model_input', help="Pandas DataFrame")
     parser.add_argument("--num_samples", type=int, default=10, help="Pandas DataFrame")
+    parser.add_argument("--ckpt_step", type=int, default=0, help="Pandas DataFrame")
     parser.add_argument("--temp", type=float, default=0.5, help="Prediction Temperature")
     parser.add_argument("--top_p", type=float, default=0.9, help="Prediction Top-P")
     parser.add_argument("--max_len", type=int, default=300, help="Prediction Max Length")
@@ -41,6 +42,7 @@ if __name__ == "__main__":
     pred_temp = args.temp
     pred_top_p = args.top_p
     pred_max_len = args.max_len
+    ckpt_step = args.ckpt_step
 
     gradient_accumulation_steps = params.get("gradient_accumulation_steps", 1)
     per_replica_batch = params["per_replica_batch"]
@@ -79,7 +81,9 @@ if __name__ == "__main__":
     with open(f"gs://{bucket}/{model_dir}/meta.json", "r") as f:
         meta = json.load(f)
 
-    ckpt_step = meta["checkpoints"][-1]
+    if ckpt_step == 0:
+        ckpt_step = meta["checkpoints"][-1]
+
     print(f"using checkpoint {ckpt_step}")
 
     samples_df = pd.read_csv(sample_file)
@@ -104,6 +108,8 @@ if __name__ == "__main__":
         for sample in samples:
 
             tokens = tokenizer.encode(sample)
+            print('Input Context:', sample)
+            print()
 
             start = time.time()
 
@@ -116,7 +122,8 @@ if __name__ == "__main__":
 
             output = network.generate(batched_tokens, length, 512, {"top_p": np.ones(total_batch) * pred_top_p,
                                                                     "temp": np.ones(total_batch) * pred_temp})
-            samples = []
+
+            print('Ouput generations:', len(output[1][0][:, :, 0]))
             encoded_tokens = list(output[1][0][:, :, 0][0])
 
             stop_idx = encoded_tokens.index(tokenizer.eos_token_id) if tokenizer.eos_token_id in encoded_tokens else len(encoded_tokens)
