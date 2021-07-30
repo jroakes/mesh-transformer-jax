@@ -18,6 +18,7 @@ from mesh_transformer.util import to_f32, to_bf16, maybe_shard, head_print
 from jax.experimental import PartitionSpec as P
 
 
+
 class CausalTransformerShard(hk.Module):
     def __init__(self, config):
         super().__init__()
@@ -203,14 +204,20 @@ class CausalTransformer:
                         logit_penalties[logit_penalized < 0] = repetition_penalty
                         logit_penalties[logit_penalized > 0] = 1 / repetition_penalty
                         np.put(token_penalties[i], prev_input_id, logit_penalties)
-                    return tf.convert_to_tensor(token_penalties, dtype=tf.float32)
+                    return token_penalties
 
                 def generate_scan_fn(carry, sampler_input):
                     next_token, decode_state, sample_key = carry
                     sample_key, new_key = jax.random.split(sample_key)
 
                     logits, new_state = transformer.generate_once(next_token, decode_state)
-                    logits = _create_next_token_logits_penalties(ctx, logits, repetition_penalty) # Remove to clear rep pen
+
+                    # RRepition Penalty
+                    if repetition_penalty != 1.0:
+                        penalties = _create_next_token_logits_penalties(ctx, logits, repetition_penalty)
+                        logits = jnp.multiply(logits, penalties)
+
+                     # Remove to clear rep pen
                     next_token, sample_info = sampler(sample_key, logits, sampler_input, **sampler_options)
 
                     if self.return_logits:
