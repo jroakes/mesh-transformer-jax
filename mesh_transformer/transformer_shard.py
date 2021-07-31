@@ -198,19 +198,17 @@ class CausalTransformer:
                     repetition_penalty = sampler_options.get('repetition_penalty', None)
 
                     # create logit penalties for already seen input_ids
-                    token_penalties = np.ones(logits)
+                    token_penalties = jnp.ones(logits)
 
                     if repetition_penalty:
-                        prev_input_ids = [np.unique(input_id) for input_id in input_ids.numpy()]
-                        for i, prev_input_id in enumerate(prev_input_ids):
-                            logit_penalized = logits[i].numpy()[prev_input_id]
-                            logit_penalties = np.zeros(logit_penalized.shape)
-                            # if previous logit score is < 0 then multiply repetition penalty else divide
-                            logit_penalties[logit_penalized < 0] = repetition_penalty
-                            logit_penalties[logit_penalized > 0] = 1 / repetition_penalty
-                            np.put(token_penalties[i], prev_input_id, logit_penalties)
+                        prev_input_ids = jnp.unique(input_ids) # [[123,234,123,...]]
+                        logit_penalized = logits[prev_input_ids]
+                        logit_penalties = jnp.zeros(logit_penalized.shape)
+                        # if previous logit score is < 0 then multiply repetition penalty else divide
+                        logit_penalties[logit_penalized < 0] = repetition_penalty
+                        logit_penalties[logit_penalized > 0] = 1 / repetition_penalty
 
-                    return token_penalties
+                    return logit_penalties
 
                 def generate_scan_fn(carry, sampler_input):
                     next_token, decode_state, sample_key = carry
@@ -225,8 +223,8 @@ class CausalTransformer:
                     print(logits)
                     print('Options:')
                     print(sampler_options)
-                    #penalties = _create_next_token_logits_penalties(ctx, logits, sampler_options)
-                    #logits = jnp.multiply(logits, penalties)
+                    penalties = _create_next_token_logits_penalties(ctx, logits, sampler_options)
+                    logits = jnp.multiply(logits, penalties)
 
                      # Remove to clear rep pen
                     next_token, sample_info = sampler(sample_key, logits, sampler_input, sampler_options)

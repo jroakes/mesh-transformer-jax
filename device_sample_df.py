@@ -133,7 +133,7 @@ if __name__ == "__main__":
             stop_idx = len(encoded_tokens)
             for end_token in end_tokens:
                 if end_token in encoded_tokens:
-                    stop_idx = encoded_tokens.index(tokenizer.eos_token_id)
+                    stop_idx = encoded_tokens.index(end_token)
                     break
 
             decoded_tokens = tokenizer.decode(encoded_tokens[:stop_idx])
