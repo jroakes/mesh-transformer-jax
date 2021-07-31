@@ -198,7 +198,7 @@ class CausalTransformer:
                     repetition_penalty = sampler_options.get('repetition_penalty', None)
 
                     # create logit penalties for already seen input_ids
-                    token_penalties = np.ones(shape_list(logits))
+                    token_penalties = np.ones(logits)
 
                     if repetition_penalty:
                         prev_input_ids = [np.unique(input_id) for input_id in input_ids.numpy()]
