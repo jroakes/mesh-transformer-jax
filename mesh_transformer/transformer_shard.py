@@ -219,8 +219,14 @@ class CausalTransformer:
                     logits, new_state = transformer.generate_once(next_token, decode_state)
 
                     # Repition Penalty
-                    penalties = _create_next_token_logits_penalties(ctx, logits, sampler_options)
-                    logits = jnp.multiply(logits, penalties)
+                    print('CTX:')
+                    print(ctx)
+                    print('Logits:')
+                    print(logits)
+                    print('Options:')
+                    print(sampler_options)
+                    #penalties = _create_next_token_logits_penalties(ctx, logits, sampler_options)
+                    #logits = jnp.multiply(logits, penalties)
 
                      # Remove to clear rep pen
                     next_token, sample_info = sampler(sample_key, logits, sampler_input, sampler_options)
