@@ -197,16 +197,14 @@ class CausalTransformer:
 
                     repetition_penalty = sampler_options.get('repetition_penalty', None)
 
-                    # create logit penalties for already seen input_ids
-                    token_penalties = jnp.ones(logits)
 
                     if repetition_penalty:
                         prev_input_ids = jnp.unique(input_ids) # [[123,234,123,...]]
-                        logit_penalized = logits[prev_input_ids]
+                        logit_penalized = logits[:, prev_input_ids]
                         logit_penalties = jnp.zeros(logit_penalized.shape)
                         # if previous logit score is < 0 then multiply repetition penalty else divide
-                        logit_penalties[logit_penalized < 0] = repetition_penalty
-                        logit_penalties[logit_penalized > 0] = 1 / repetition_penalty
+                        logit_penalties[:, logit_penalized < 0] = repetition_penalty
+                        logit_penalties[:, logit_penalized > 0] = 1 / repetition_penalty
 
                     return logit_penalties
 
