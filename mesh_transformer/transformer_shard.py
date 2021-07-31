@@ -198,7 +198,7 @@ class CausalTransformer:
                     repetition_penalty = sampler_options.get('repetition_penalty', None)
 
 
-                    if repetition_penalty:
+                    if repetition_penalty is not None:
                         prev_input_ids = jnp.unique(input_ids) # [[123,234,123,...]]
                         logit_penalized = logits[:, prev_input_ids]
                         logit_penalties = jnp.zeros(logit_penalized.shape)
