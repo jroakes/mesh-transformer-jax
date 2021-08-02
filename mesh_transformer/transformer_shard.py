@@ -347,8 +347,8 @@ class CausalTransformer:
         self.gen_length = gen_length
         self.top_p = np.ones(total_batch) * top_p
         self.temp = np.ones(total_batch) * temp
-        self.top_k = np.ones(total_batch) * top_k
-        self.rep_penalty = np.ones(total_batch) * rep_penalty
+        self.top_k = np.ones(total_batch) * top_k if top_k else None
+        self.rep_penalty = np.ones(total_batch) * rep_penalty if rep_penalty else None
         self.return_logits = return_logits
 
         return self.generate_xmap(self.state,
