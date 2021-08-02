@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
             output = network.generate(batched_tokens, length, pred_max_len, top_p=pred_top_p,
                                                                             temp=pred_temp,
-                                                                            repetition_penalty= repetition_penalty)
+                                                                            rep_penalty= repetition_penalty)
 
             print('Ouput generations:', len(output[1][0][:, :, 0]))
             encoded_tokens = list(output[1][0][:, :, 0][0])

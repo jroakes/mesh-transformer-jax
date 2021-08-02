@@ -4,6 +4,8 @@ import jax.numpy as jnp
 
 def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty=None):
 
+    logit_penalties = jnp.ones(logits.shape)
+
     if repetition_penalty is not None:
         prev_input_ids = jnp.unique(input_ids) # [[123,234,123,...]]
         logit_penalized = logits[:, prev_input_ids]
