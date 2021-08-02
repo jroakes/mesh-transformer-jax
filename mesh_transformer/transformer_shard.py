@@ -12,6 +12,8 @@ from jax.experimental.maps import thread_resources
 from jax.experimental.pjit import pjit
 
 from mesh_transformer.checkpoint import read_ckpt, write_ckpt, write_ckpt_v2, load_ckpt_v2
+from mesh_transformer.sampling import nucleaus_sample
+from mesh_transformer.penalties import repetition_penalty
 from mesh_transformer.layers import EmbeddingShard, TransformerLayerShard, RelativePositionEmbs, ProjectionShard, \
     TransformerLayerShardV2, Projection, EmbeddingShardV2
 from mesh_transformer.util import to_f32, to_bf16, maybe_shard, head_print
@@ -93,7 +95,7 @@ class CausalTransformerShard(hk.Module):
             x = x + res
             states.append(layer_state)
 
-        return self.proj(x), (last.astype(jnp.uint32), states, hk.next_rng_key())
+        return self.proj(x), (last.astype(jnp.uint32), context, states, hk.next_rng_key())
 
     def generate_once(self, new_tok, state):
         input_len = state[0]["v"].shape[0]
@@ -183,61 +185,45 @@ class CausalTransformer:
                 "opt_state": optimizer.init(params)
             }
 
-        def generate(state, key, ctx, ctx_length, aux, sampler_options):
-            sampler = config["sampler"]
-            repetition_penalty = config["repetition_penalty"] # Remove to clear rep pen
+        def generate(state, key, ctx, ctx_length, aux):
+            sampler = nucleaus_sample
+            rep_penalty = repetition_penalty #(input_ids, logits, repetition_penalty=None)
             gen_length = self.gen_length
 
             def generate_sample(context, ctx_length, aux):
                 transformer = CausalTransformerShard(config)
                 _, initial_state = transformer.generate_initial(context, ctx_length)
 
-                # Remove to clear rep pen
-                def _create_next_token_logits_penalties(input_ids, logits, sampler_options):
-
-                    repetition_penalty = sampler_options.get('repetition_penalty', None)
-
-
-                    if repetition_penalty is not None:
-                        prev_input_ids = jnp.unique(input_ids) # [[123,234,123,...]]
-                        logit_penalized = logits[:, prev_input_ids]
-                        logit_penalties = jnp.zeros(logit_penalized.shape)
-                        # if previous logit score is < 0 then multiply repetition penalty else divide
-                        logit_penalties[:, logit_penalized < 0] = repetition_penalty
-                        logit_penalties[:, logit_penalized > 0] = 1 / repetition_penalty
-
-                    return logit_penalties
-
                 def generate_scan_fn(carry, sampler_input):
-                    next_token, decode_state, sample_key = carry
+                    next_token, context, decode_state, sample_key = carry
                     sample_key, new_key = jax.random.split(sample_key)
+
+                    print('Decode State:')
+                    print(decode_state)
 
                     logits, new_state = transformer.generate_once(next_token, decode_state)
 
-                    # Repition Penalty
-                    print('CTX:')
-                    print(ctx)
-                    print('Logits:')
-                    print(logits)
-                    print('Options:')
-                    print(sampler_options)
-                    penalties = _create_next_token_logits_penalties(ctx, logits, sampler_options)
-                    logits = jnp.multiply(logits, penalties)
+                    pen_logits = rep_penalty(context, logits, repetition_penalty=self.rep_penalty)
 
-                     # Remove to clear rep pen
-                    next_token, sample_info = sampler(sample_key, logits, sampler_input, sampler_options)
+                    # sample_info returns None.
+                    next_token, sample_info = sampler(sample_key, pen_logits, sampler_input, top_p=self.top_p,
+                                                                                         temp=self.temp,
+                                                                                         top_k=self.top_k)
+
+                    context = jnp.concatenate((context, next_token), axis=0)
 
                     if self.return_logits:
                         output = (next_token, sample_info, logits)
                     else:
                         output = (next_token, sample_info)
-                    new_carry = (next_token, new_state, new_key)
+                    new_carry = (next_token, context, new_state, new_key)
                     return new_carry, output
 
                 final_state, outputs = jax.lax.scan(generate_scan_fn, initial_state, xs=aux, length=gen_length)
                 return final_state, outputs
 
             generate_fn = hk.transform(generate_sample).apply
+
             return generate_fn(state["params"], key, ctx, ctx_length, aux)
 
         self.init_xmap = jax.experimental.maps.xmap(fun=init,
@@ -347,20 +333,27 @@ class CausalTransformer:
         # print(f"eval done in {time.time() - start:.06}s")
         return out
 
-    def generate(self, ctx, ctx_length, gen_length, sampler_options, return_logits=False):
+    def generate(self, ctx, ctx_length, gen_length, top_p=0.9,
+                                                    temp=1,
+                                                    top_k==None,
+                                                    rep_penalty=None,
+                                                    return_logits=False):
         key = hk.PRNGSequence(random.randint(0, 2 ** 60))
 
         batch_size = ctx.shape[0]
         aux = jnp.zeros((batch_size, gen_length), dtype=jnp.uint32)
         self.gen_length = gen_length
+        self.top_p = top_p
+        self.temp = temp
+        self.top_k = top_k
+        self.rep_penalty = rep_penalty
         self.return_logits = return_logits
 
         return self.generate_xmap(self.state,
                                   jnp.array(key.take(batch_size)),
                                   ctx,
                                   np.array(ctx_length, dtype=np.uint32),
-                                  aux,
-                                  sampler_options)
+                                  aux)
 
 
 # this bypasses the CausalTransformerShard class (which causes ugly code) but in return allows layers to be processed
