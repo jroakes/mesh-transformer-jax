@@ -95,7 +95,8 @@ class CausalTransformerShard(hk.Module):
             x = x + res
             states.append(layer_state)
 
-        return self.proj(x), (last.astype(jnp.uint32), context, states, hk.next_rng_key())
+        # return self.proj(x), (last.astype(jnp.uint32), context, states, hk.next_rng_key())
+        return self.proj(x), (last.astype(jnp.uint32), states, hk.next_rng_key())
 
     def generate_once(self, new_tok, state):
         input_len = state[0]["v"].shape[0]
@@ -195,7 +196,9 @@ class CausalTransformer:
                 _, initial_state = transformer.generate_initial(context, ctx_length)
 
                 def generate_scan_fn(carry, sampler_input):
-                    next_token, context, decode_state, sample_key = carry
+                    # next_token, context, decode_state, sample_key = carry
+                    next_token, decode_state, sample_key = carry
+
                     sample_key, new_key = jax.random.split(sample_key)
 
                     print('Decode State:')
@@ -216,7 +219,8 @@ class CausalTransformer:
                         output = (next_token, sample_info, logits)
                     else:
                         output = (next_token, sample_info)
-                    new_carry = (next_token, context, new_state, new_key)
+                    new_carry = (next_token, new_state, new_key)
+                    # new_carry = (next_token, context, new_state, new_key)
                     return new_carry, output
 
                 final_state, outputs = jax.lax.scan(generate_scan_fn, initial_state, xs=aux, length=gen_length)
