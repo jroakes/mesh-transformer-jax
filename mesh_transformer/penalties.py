@@ -17,16 +17,10 @@ def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty=No
     return logit_penalties
 
 
-def repetition_penalty(input_ids, logits, repetition_penalty=None):
+def repetition_penalty(input_ids, logits, options):
 
-    # Repition Penalty
-    print('CTX:')
-    print(input_ids)
-    print('Logits:')
-    print(logits)
-    print('Options:')
-    print("repetition_penalty:", repetition_penalty)
-
+    repetition_penalty = options.get('repetition_penalty', None)
+    
     penalties = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty)
     logits = jnp.multiply(logits, penalties)
     return logits
