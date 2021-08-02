@@ -335,18 +335,20 @@ class CausalTransformer:
 
     def generate(self, ctx, ctx_length, gen_length, top_p=0.9,
                                                     temp=1,
-                                                    top_k==None,
+                                                    top_k=None,
                                                     rep_penalty=None,
                                                     return_logits=False):
+
         key = hk.PRNGSequence(random.randint(0, 2 ** 60))
 
         batch_size = ctx.shape[0]
         aux = jnp.zeros((batch_size, gen_length), dtype=jnp.uint32)
+        total_batch = np.ones(ctx_length, dtype=np.uint32).shape[0]
         self.gen_length = gen_length
-        self.top_p = top_p
-        self.temp = temp
-        self.top_k = top_k
-        self.rep_penalty = rep_penalty
+        self.top_p = np.ones(total_batch) * top_p
+        self.temp = np.ones(total_batch) * temp
+        self.top_k = np.ones(total_batch) * top_k
+        self.rep_penalty = np.ones(total_batch) * rep_penalty
         self.return_logits = return_logits
 
         return self.generate_xmap(self.state,

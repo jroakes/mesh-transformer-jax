@@ -120,11 +120,11 @@ if __name__ == "__main__":
 
             padded_tokens = np.pad(tokens, ((pad_amount, 0),)).astype(np.uint32)
             batched_tokens = np.array([padded_tokens] * total_batch)
-            length = np.ones(total_batch, dtype=np.uint32) * pred_max_len
+            length = np.ones(total_batch, dtype=np.uint32) * len(tokens)
 
-            output = network.generate(batched_tokens, length, 512, {"top_p": np.ones(total_batch) * pred_top_p,
-                                                                    "temp": np.ones(total_batch) * pred_temp,
-                                                                    "repetition_penalty": np.ones(total_batch) * repetition_penalty})
+            output = network.generate(batched_tokens, length, pred_max_len, top_p=pred_top_p,
+                                                                            temp=pred_temp,
+                                                                            repetition_penalty= repetition_penalty)
 
             print('Ouput generations:', len(output[1][0][:, :, 0]))
             encoded_tokens = list(output[1][0][:, :, 0][0])
