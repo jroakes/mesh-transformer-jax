@@ -38,7 +38,11 @@ def nucleaus_filter(logits, top_p=0.9, top_k=None):
     return logits
 
 
-def nucleaus_sample(key, logits, _, top_p=0.9, temp=1, top_k=None):
+def nucleaus_sample(key, logits, _, options):
+
+    top_p = options.get('top_p', 0.9)
+    temp = options.get('temp', 1)
+    top_k = options.get('top_k', 1)
 
     logits = nucleaus_filter(logits, top_p, top_k=top_k)
 
