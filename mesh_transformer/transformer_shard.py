@@ -187,7 +187,7 @@ class CausalTransformer:
 
         def generate(state, key, ctx, ctx_length, aux):
             sampler = nucleaus_sample
-            rep_penalty = repetition_penalty #(input_ids, logits, repetition_penalty=None)
+            #rep_penalty = repetition_penalty
             gen_length = self.gen_length
 
             def generate_sample(context, ctx_length, aux):
@@ -203,14 +203,14 @@ class CausalTransformer:
 
                     logits, new_state = transformer.generate_once(next_token, decode_state)
 
-                    pen_logits = rep_penalty(context, logits, repetition_penalty=self.rep_penalty)
+                    #pen_logits = rep_penalty(context, logits, repetition_penalty=self.rep_penalty)
 
                     # sample_info returns None.
                     next_token, sample_info = sampler(sample_key, pen_logits, sampler_input, top_p=self.top_p,
                                                                                          temp=self.temp,
                                                                                          top_k=self.top_k)
 
-                    context = jnp.concatenate((context, next_token), axis=0)
+                    #context = jnp.concatenate((context, next_token), axis=0)
 
                     if self.return_logits:
                         output = (next_token, sample_info, logits)
