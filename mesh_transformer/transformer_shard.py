@@ -343,12 +343,11 @@ class CausalTransformer:
 
         batch_size = ctx.shape[0]
         aux = jnp.zeros((batch_size, gen_length), dtype=jnp.uint32)
-        total_batch = np.ones(ctx_length, dtype=np.uint32).shape[0]
         self.gen_length = gen_length
-        self.top_p = np.ones(total_batch) * top_p
-        self.temp = np.ones(total_batch) * temp
-        self.top_k = np.ones(total_batch) * top_k if top_k else None
-        self.rep_penalty = np.ones(total_batch) * rep_penalty if rep_penalty else None
+        self.top_p = np.ones(batch_size) * top_p
+        self.temp = np.ones(batch_size) * temp
+        self.top_k = np.ones(batch_size) * top_k if top_k else None
+        self.rep_penalty = np.ones(batch_size) * rep_penalty if rep_penalty else None
         self.return_logits = return_logits
 
         return self.generate_xmap(self.state,

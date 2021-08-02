@@ -6,7 +6,7 @@ def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty=No
 
     logit_penalties = jnp.ones(logits.shape)
 
-    if repetition_penalty is not None and repetition_penalty is not 1.0:
+    if repetition_penalty is not None and repetition_penalty != 1.0:
         prev_input_ids = jnp.unique(input_ids) # [[123,234,123,...]]
         logit_penalized = logits[:, prev_input_ids]
         logit_penalties = jnp.zeros(logit_penalized.shape)
