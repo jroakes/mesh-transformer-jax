@@ -201,8 +201,8 @@ class CausalTransformer:
                     next_token, context, decode_state, sample_key = carry
                     sample_key, new_key = jax.random.split(sample_key)
 
-                    print('Context:')
-                    print(context)
+                    #print('Context:')
+                    #print(context)
 
                     logits, new_state = transformer.generate_once(next_token, decode_state)
 
@@ -213,7 +213,7 @@ class CausalTransformer:
                     print('Next Token:')
                     print(next_token)
 
-                    context = jnp.append(context, next_token)
+                    context = jnp.append(context, next_token)[1:]
 
                     if self.return_logits:
                         output = (next_token, sample_info, logits)
