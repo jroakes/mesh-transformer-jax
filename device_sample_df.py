@@ -22,10 +22,10 @@ def parse_args():
     # Parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=None, help="Config file location")
-    parser.add_argument("--sample_file", type=str, default=None, help="Pandas DataFrame")
-    parser.add_argument("--prompt_column", type=str, default='model_input', help="Pandas DataFrame")
+    parser.add_argument("--sample_file", type=str, default=None, help="CSV of sample data")
+    parser.add_argument("--prompt_column", type=str, default='model_input', help="The column that includes the input prompts")
     parser.add_argument("--num_samples", type=int, default=10, help="Pandas DataFrame")
-    parser.add_argument("--ckpt_step", type=int, default=0, help="Pandas DataFrame")
+    parser.add_argument("--ckpt_step", type=int, default=0, help="Which Checkpoint step to load")
     parser.add_argument("--temp", type=float, default=0.5, help="Prediction Temperature")
     parser.add_argument("--top_p", type=float, default=0.9, help="Prediction Top-P")
     parser.add_argument("--repetition_penalty", type=float, default=1.2, help="Repetition Penalty")
