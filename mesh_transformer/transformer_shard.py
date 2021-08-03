@@ -210,6 +210,9 @@ class CausalTransformer:
 
                     next_token, sample_info = sampler(sample_key, pen_logits, sampler_input, options)
 
+                    print('Next Token:')
+                    print(next_token)
+
                     context = jnp.append(context, next_token)
 
                     if self.return_logits:
