@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 
 def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty):
@@ -8,7 +9,7 @@ def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty):
     print('logits', logits)
     print('Repetiton Penalty', repetition_penalty)
 
-    prev_input_ids = jnp.unique(input_ids) # [[123,234,123,...]]
+    prev_input_ids = np.unique(input_ids) # [[123,234,123,...]]
     logit_penalized = logits[:, prev_input_ids]
     logit_penalties = jnp.zeros(logit_penalized.shape)
     # if previous logit score is < 0 then multiply repetition penalty else divide
