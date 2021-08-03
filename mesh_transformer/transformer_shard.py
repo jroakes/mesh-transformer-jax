@@ -205,7 +205,12 @@ class CausalTransformer:
                     print(context)
 
                     logits, new_state = transformer.generate_once(next_token, decode_state)
-                    next_token, sample_info = sampler(sample_key, logits, sampler_input, options)
+
+                    pen_logits = penalty(context, logits, options)
+
+                    next_token, sample_info = sampler(sample_key, pen_logits, sampler_input, options)
+
+                    context = jnp.append(context, next_token)
 
                     if self.return_logits:
                         output = (next_token, sample_info, logits)
