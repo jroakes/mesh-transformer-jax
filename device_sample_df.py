@@ -23,12 +23,13 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=None, help="Config file location")
     parser.add_argument("--sample_file", type=str, default=None, help="CSV of sample data")
+    parser.add_argument("--name_column", type=str, default='name', help="The column that includes a name for the row")
     parser.add_argument("--prompt_column", type=str, default='model_input', help="The column that includes the input prompts")
     parser.add_argument("--num_samples", type=int, default=10, help="Pandas DataFrame")
     parser.add_argument("--ckpt_step", type=int, default=0, help="Which Checkpoint step to load")
     parser.add_argument("--temp", type=float, default=0.5, help="Prediction Temperature")
     parser.add_argument("--top_p", type=float, default=0.9, help="Prediction Top-P")
-    parser.add_argument("--repetition_penalty", type=float, default=1.2, help="Repetition Penalty")
+    parser.add_argument("--rep_penalty", type=float, default=1.2, help="Repetition Penalty")
     parser.add_argument("--max_len", type=int, default=300, help="Prediction Max Length")
     args = parser.parse_args()
     return args
@@ -39,10 +40,11 @@ if __name__ == "__main__":
     params = json.load(open(args.config))
     sample_file = args.sample_file
     prompt_column = args.prompt_column
+    name_column = args.name_column
     num_samples = args.num_samples
     pred_temp = args.temp
     pred_top_p = args.top_p
-    repetition_penalty = args.repetition_penalty
+    pred_rep_penalty = args.rep_penalty
     pred_max_len = args.max_len
     ckpt_step = args.ckpt_step
 
@@ -89,7 +91,10 @@ if __name__ == "__main__":
     print(f"using checkpoint {ckpt_step}")
 
     samples_df = pd.read_csv(sample_file)
-    samples = random.choices(samples_df[prompt_column].tolist(), k=num_samples)
+    sample_idx = random.choices(range(len(samples_df)), k=num_samples)
+    samples = list(np.array(samples_df[prompt_column].tolist())[sample_idx])
+    names = list(np.array(samples_df[name_column].tolist())[sample_idx])
+
     df_result = pd.DataFrame()
 
     total_batch = per_replica_batch * jax.device_count() // cores_per_replica
@@ -107,7 +112,7 @@ if __name__ == "__main__":
 
         tokenizer = transformers.GPT2TokenizerFast.from_pretrained('gpt2')
 
-        for sample in samples:
+        for name, sample in zip(names, samples):
 
             tokens = tokenizer.encode(sample)
             print('Input Context:', sample)
@@ -122,8 +127,10 @@ if __name__ == "__main__":
             batched_tokens = np.array([padded_tokens] * total_batch)
             length = np.ones(total_batch, dtype=np.uint32) * len(tokens)
 
-            output = network.generate(batched_tokens, length, pred_max_len, {"top_p": np.ones(total_batch) * 0.9,
-                                                                             "temp": np.ones(total_batch) * 0.75})
+            output = network.generate(batched_tokens, length, pred_max_len, {"top_p": np.ones(total_batch) * pred_top_p,
+                                                                             "temp": np.ones(total_batch) * pred_temp,
+                                                                             "repetition_penalty": np.ones(total_batch) * pred_rep_penalty})
+
 
             print('Ouput generations:', len(output[1][0][:, :, 0]))
             encoded_tokens = list(output[1][0][:, :, 0][0])
@@ -140,7 +147,7 @@ if __name__ == "__main__":
             print('Decoded Tokens:', decoded_tokens)
             print()
 
-            df_result = df_result.append({'prompt': sample, 'predicted':decoded_tokens}, ignore_index=True)
+            df_result = df_result.append({'name': name, 'prompt': sample, 'predicted':decoded_tokens}, ignore_index=True)
 
 
             print(f"completion done in {time.time() - start:06}s")
