@@ -96,7 +96,7 @@ class CausalTransformerShard(hk.Module):
             x = x + res
             states.append(layer_state)
 
-        return self.proj(x), (last.astype(jnp.uint32), states, hk.next_rng_key())
+        return self.proj(x), (last.astype(jnp.uint32), context, states, hk.next_rng_key())
 
     def generate_once(self, new_tok, state):
         input_len = state[0]["v"].shape[0]
