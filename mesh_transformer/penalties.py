@@ -44,6 +44,7 @@ def apply_repetition_penalty(sequences,
     penalty_tensor = jnp.where(indicator,
                              jnp.ones_like(logits) * repetition_penalty,
                              jnp.ones_like(logits))
+
     if repetition_penalty_normalize:
         logits = jax.nn.log_softmax(logits)
     # Dividing a negative logit by the penalty tensor actually increases the
@@ -69,7 +70,7 @@ def repetition_penalty(input_ids, i, logits, options):
                                              i,
                                              repetition_penalty,
                                              repetition_window,
-                                             repetition_penalty_normalize):
+                                             repetition_penalty_normalize)
 
         #penalties = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty)
         #logits = jnp.multiply(logits, penalties)
