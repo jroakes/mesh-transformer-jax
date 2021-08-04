@@ -30,6 +30,9 @@ def apply_repetition_penalty(sequences,
     max_i = i  # We are currently generating a token for position i + 1.
     min_i = i - repetition_window + 1
     batch_size, vocab_size = logits.shape
+
+    print(sequences.shape)
+    
     positions = jnp.arange(sequences.shape[1])
     positions = jnp.tile(positions[jnp.newaxis, :, jnp.newaxis],
                        [batch_size, 1, vocab_size])
@@ -65,13 +68,13 @@ def repetition_penalty(input_ids, i, logits, options):
 
 
     #if repetition_penalty != 1: TODO: Need to figure out how to compare bool with jax parameters
-    # logits = apply_repetition_penalty(  input_ids,
-    #                                      logits,
-    #                                      i,
-    #                                      repetition_penalty,
-    #                                      repetition_window,
-    #                                      repetition_penalty_normalize)
+    logits = apply_repetition_penalty(  input_ids,
+                                         logits,
+                                         i,
+                                         repetition_penalty,
+                                         repetition_window,
+                                         repetition_penalty_normalize)
 
-    penalties = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty)
-    logits = jnp.multiply(logits, penalties)
+        #penalties = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty)
+        #logits = jnp.multiply(logits, penalties)
     return logits
