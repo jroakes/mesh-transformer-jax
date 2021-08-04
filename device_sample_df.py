@@ -30,6 +30,8 @@ def parse_args():
     parser.add_argument("--temp", type=float, default=0.5, help="Prediction Temperature")
     parser.add_argument("--top_p", type=float, default=0.9, help="Prediction Top-P")
     parser.add_argument("--rep_penalty", type=float, default=1.2, help="Repetition Penalty")
+    parser.add_argument("--rep_window", type=int, default=10, help="Repetition Penalty")
+    parser.add_argument("--rep_norm", type=bool, default=False, help="Repetition Penalty")
     parser.add_argument("--max_len", type=int, default=300, help="Prediction Max Length")
     args = parser.parse_args()
     return args
@@ -45,6 +47,8 @@ if __name__ == "__main__":
     pred_temp = args.temp
     pred_top_p = args.top_p
     pred_rep_penalty = args.rep_penalty
+    pred_rep_window = args.rep_window
+    pred_rep_norm = args.rep_norm
     pred_max_len = args.max_len
     ckpt_step = args.ckpt_step
 
@@ -129,7 +133,9 @@ if __name__ == "__main__":
 
             output = network.generate(batched_tokens, length, pred_max_len, {"top_p": np.ones(total_batch) * pred_top_p,
                                                                              "temp": np.ones(total_batch) * pred_temp,
-                                                                             "repetition_penalty": np.ones(total_batch) * pred_rep_penalty})
+                                                                             "repetition_penalty": np.ones(total_batch) * pred_rep_penalty,
+                                                                             "repetition_window": np.ones(total_batch) * pred_rep_window,
+                                                                             "repetition_penalty_normalize": np.ones(total_batch) * pred_rep_norm})
 
 
             print('Ouput generations:', len(output[1][0][:, :, 0]))

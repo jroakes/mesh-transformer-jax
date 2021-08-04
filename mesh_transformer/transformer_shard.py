@@ -79,6 +79,7 @@ class CausalTransformerShard(hk.Module):
         # slice last token off the context (we use that in generate_once to generate the first new token)
         last = context[-1:]
         context = context[:-1]
+        i0 = jnp.array(0)
 
         input_len = context.shape[0]
 
@@ -96,7 +97,7 @@ class CausalTransformerShard(hk.Module):
             x = x + res
             states.append(layer_state)
 
-        return self.proj(x), (last.astype(jnp.uint32), context, states, hk.next_rng_key())
+        return self.proj(x), (i0, last.astype(jnp.uint32), context, states, hk.next_rng_key())
 
     def generate_once(self, new_tok, state):
         input_len = state[0]["v"].shape[0]
@@ -198,7 +199,7 @@ class CausalTransformer:
 
                 def generate_scan_fn(carry, sampler_input):
                     #next_token, decode_state, sample_key = carry
-                    next_token, context, decode_state, sample_key = carry
+                    i, next_token, context, decode_state, sample_key = carry
                     sample_key, new_key = jax.random.split(sample_key)
 
                     #print('Context:')
@@ -206,21 +207,22 @@ class CausalTransformer:
 
                     logits, new_state = transformer.generate_once(next_token, decode_state)
 
-                    pen_logits = penalty(context, logits, options)
+                    pen_logits = penalty(context, i, logits, options)
 
                     next_token, sample_info = sampler(sample_key, pen_logits, sampler_input, options)
 
                     print('Next Token:')
                     print(next_token)
 
-                    context = jnp.append(context, next_token)[1:]
+                    new_context = lax.dynamic_update_slice(context, next_token,
+                                             (0, i + 1))
 
                     if self.return_logits:
                         output = (next_token, sample_info, logits)
                     else:
                         output = (next_token, sample_info)
                     #new_carry = (next_token, new_state, new_key)
-                    new_carry = (next_token, context, new_state, new_key)
+                    new_carry = (i+1, next_token, new_context, new_state, new_key)
                     return new_carry, output
 
                 final_state, outputs = jax.lax.scan(generate_scan_fn, initial_state, xs=aux, length=gen_length)
