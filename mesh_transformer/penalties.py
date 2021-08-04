@@ -64,13 +64,13 @@ def repetition_penalty(input_ids, i, logits, options):
     repetition_penalty_normalize = options.get('repetition_penalty_normalize', False)
 
 
-    if repetition_penalty != 1:
-        logits = apply_repetition_penalty(  input_ids,
-                                             logits,
-                                             i,
-                                             repetition_penalty,
-                                             repetition_window,
-                                             repetition_penalty_normalize)
+    #if repetition_penalty != 1: TODO: Need to figure out how to compare bool with jax parameters
+    logits = apply_repetition_penalty(  input_ids,
+                                         logits,
+                                         i,
+                                         repetition_penalty,
+                                         repetition_window,
+                                         repetition_penalty_normalize)
 
         #penalties = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty)
         #logits = jnp.multiply(logits, penalties)
