@@ -216,7 +216,7 @@ class CausalTransformer:
                     print('Next Token:')
                     print(next_token)
 
-                    new_context = jax.lax.dynamic_update_slice(context, next_token,
+                    new_context = jax.lax.dynamic_update_slice(context, [next_token],
                                              (0, i + 1))
 
                     if self.return_logits:
