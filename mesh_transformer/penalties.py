@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+from jax import lax
 import numpy as np
 
 
@@ -51,7 +52,7 @@ def apply_repetition_penalty(sequences,
     #if repetition_penalty_normalize:
     #    logits = jax.nn.log_softmax(logits)
 
-    
+
     # Dividing a negative logit by the penalty tensor actually increases the
     # resulting probability. Take the inverse for negative logits.
     penalty_tensor = jnp.where(logits > 0,
