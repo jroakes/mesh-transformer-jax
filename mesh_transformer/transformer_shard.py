@@ -77,6 +77,8 @@ class CausalTransformerShard(hk.Module):
 
     def generate_initial(self, context, length):
         # slice last token off the context (we use that in generate_once to generate the first new token)
+        initial_context = jnp.array([context])
+
         last = context[-1:]
         context = context[:-1]
         i0 = jnp.array(0)
@@ -97,7 +99,7 @@ class CausalTransformerShard(hk.Module):
             x = x + res
             states.append(layer_state)
 
-        return self.proj(x), (i0, last.astype(jnp.uint32), context, states, hk.next_rng_key())
+        return self.proj(x), (i0, last.astype(jnp.uint32), initial_context, states, hk.next_rng_key())
 
     def generate_once(self, new_tok, state):
         input_len = state[0]["v"].shape[0]

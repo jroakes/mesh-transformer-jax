@@ -32,7 +32,6 @@ def apply_repetition_penalty(sequences,
     batch_size, vocab_size = logits.shape
 
     print(sequences.shape)
-    
     positions = jnp.arange(sequences.shape[1])
     positions = jnp.tile(positions[jnp.newaxis, :, jnp.newaxis],
                        [batch_size, 1, vocab_size])
