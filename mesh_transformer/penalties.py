@@ -47,8 +47,11 @@ def apply_repetition_penalty(sequences,
                              jnp.ones_like(logits) * repetition_penalty,
                              jnp.ones_like(logits))
 
-    if repetition_penalty_normalize:
-        logits = jax.nn.log_softmax(logits)
+    # This throws an error.  I have no idea why
+    #if repetition_penalty_normalize:
+    #    logits = jax.nn.log_softmax(logits)
+
+    
     # Dividing a negative logit by the penalty tensor actually increases the
     # resulting probability. Take the inverse for negative logits.
     penalty_tensor = jnp.where(logits > 0,
