@@ -135,7 +135,7 @@ if __name__ == "__main__":
                                                                              "temp": np.ones(total_batch) * pred_temp,
                                                                              "repetition_penalty": np.ones(total_batch) * pred_rep_penalty,
                                                                              "repetition_window": np.ones(total_batch) * pred_rep_window,
-                                                                             "repetition_penalty_normalize": False})
+                                                                             "repetition_penalty_normalize": np.array([pred_rep_norm] * total_batch)})
 
 
             print('Ouput generations:', len(output[1][0][:, :, 0]))
