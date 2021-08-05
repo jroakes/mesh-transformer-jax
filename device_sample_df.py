@@ -145,8 +145,12 @@ if __name__ == "__main__":
             stop_idx = encoded_tokens.searchsorted(end_tokens).min()
 
             decoded_tokens = tokenizer.decode(encoded_tokens[:stop_idx])
+            decoded_tokens_all = tokenizer.decode(encoded_tokens)
 
-            print('Decoded Tokens:', decoded_tokens)
+            print('Decoded Tokens Trimmed:', decoded_tokens)
+            print()
+            print('Decoded Tokens All:', decoded_tokens_all)
+            print()
             print()
 
             df_result = df_result.append({'name': name, 'prompt': sample, 'predicted':decoded_tokens}, ignore_index=True)
