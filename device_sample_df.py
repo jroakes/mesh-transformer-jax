@@ -148,8 +148,8 @@ if __name__ == "__main__":
             decoded_tokens_all = tokenizer.decode(encoded_tokens)
 
             print('Decoded Tokens Trimmed:', decoded_tokens)
-            print()
-            print('Decoded Tokens All:', decoded_tokens_all)
+            #print()
+            #print('Decoded Tokens All:', decoded_tokens_all)
             print()
             print()
 
