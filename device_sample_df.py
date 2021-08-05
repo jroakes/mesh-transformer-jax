@@ -139,14 +139,10 @@ if __name__ == "__main__":
 
 
             print('Ouput generations:', len(output[1][0][:, :, 0]))
-            encoded_tokens = list(output[1][0][:, :, 0][0])
+            encoded_tokens = np.array(output[1][0][:, :, 0][0])
 
-            end_tokens = [198, 50256] # \n or <|endoftext|>
-            stop_idx = len(encoded_tokens)
-            for end_token in end_tokens:
-                if end_token in encoded_tokens:
-                    stop_idx = encoded_tokens.index(end_token)
-                    break
+            end_tokens = [50256, 198] # \n or <|endoftext|>
+            stop_idx = encoded_tokens.searchsorted(end_tokens).min()
 
             decoded_tokens = tokenizer.decode(encoded_tokens[:stop_idx])
 
