@@ -141,7 +141,7 @@ if __name__ == "__main__":
             print('Ouput generations:', len(output[1][0][:, :, 0]))
             encoded_tokens = np.array(output[1][0][:, :, 0][0])
 
-            end_tokens = [50256, 198] # \n or <|endoftext|>
+            end_tokens = [50256] # \n or <|endoftext|> 198 is newline
             stop_idx = encoded_tokens.searchsorted(end_tokens).min()
 
             decoded_tokens = tokenizer.decode(encoded_tokens[:stop_idx])
