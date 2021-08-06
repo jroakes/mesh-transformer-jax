@@ -8,6 +8,11 @@ import numpy as np
 def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, repetition_window):
 
     prev_input_ids = input_ids[:, -repetition_window:].squeeze()
+    # IndexError: Array slice indices must have static start/stop/step to be used with NumPy
+    # indexing syntax. To index a statically sized array at a dynamic position,try
+    # lax.dynamic_slice/dynamic_update_slice (JAX does not support dynamically sized arrays
+    # within JIT compiled functions).
+
 
     logit_penalized = logits[:, prev_input_ids]
     logit_penalties = jnp.zeros(logit_penalized.shape)
