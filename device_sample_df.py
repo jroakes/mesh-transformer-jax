@@ -139,18 +139,18 @@ if __name__ == "__main__":
 
 
             print('Ouput generations:', len(output[1][0][:, :, 0]))
-            encoded_tokens = np.array(output[1][0][:, :, 0][0])
+            encoded_tokens = list(output[1][0][:, :, 0][0])
 
-            end_tokens = [50256] # \n or <|endoftext|> 198 is newline
-            stop_idx = encoded_tokens.searchsorted(end_tokens).min()
+            end_tokens = [50256, 198] # \n or <|endoftext|>
+            stop_idx = len(encoded_tokens)
+            for end_token in end_tokens:
+                if end_token in encoded_tokens:
+                    stop_idx = encoded_tokens.index(end_token)
+                    break
 
             decoded_tokens = tokenizer.decode(encoded_tokens[:stop_idx])
-            decoded_tokens_all = tokenizer.decode(encoded_tokens)
 
-            print('Decoded Tokens Trimmed:', decoded_tokens)
-            #print()
-            #print('Decoded Tokens All:', decoded_tokens_all)
-            print()
+            print('Decoded Tokens:', decoded_tokens)
             print()
 
             df_result = df_result.append({'name': name, 'prompt': sample, 'predicted':decoded_tokens}, ignore_index=True)
