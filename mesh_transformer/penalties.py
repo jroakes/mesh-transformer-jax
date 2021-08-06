@@ -1,8 +1,10 @@
+from functools import partial
 import jax
+from jax import jit
 import jax.numpy as jnp
 import numpy as np
 
-
+@partial(jit, static_argnums=(2, 3))
 def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, repetition_window):
 
     prev_input_ids = input_ids[:, -repetition_window:].squeeze()
