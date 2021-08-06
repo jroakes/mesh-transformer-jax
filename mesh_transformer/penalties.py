@@ -4,15 +4,15 @@ from jax import jit
 import jax.numpy as jnp
 import numpy as np
 
-@partial(jit, static_argnums=(2, 3))
+
 def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, repetition_window):
 
-    prev_input_ids = input_ids[:, -repetition_window:].squeeze()
+    prev_input_ids = jax.lax.dynamic_slice(input_ids, (0, -repetition_window), (input_ids.shape[0], repetition_window))
+
     # IndexError: Array slice indices must have static start/stop/step to be used with NumPy
     # indexing syntax. To index a statically sized array at a dynamic position,try
     # lax.dynamic_slice/dynamic_update_slice (JAX does not support dynamically sized arrays
     # within JIT compiled functions).
-
 
     logit_penalized = logits[:, prev_input_ids]
     logit_penalties = jnp.zeros(logit_penalized.shape)
