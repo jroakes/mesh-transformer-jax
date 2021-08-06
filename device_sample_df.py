@@ -133,9 +133,8 @@ if __name__ == "__main__":
 
             output = network.generate(batched_tokens, length, pred_max_len, {"top_p": np.ones(total_batch) * pred_top_p,
                                                                              "temp": np.ones(total_batch) * pred_temp,
-                                                                             "repetition_penalty": np.ones(total_batch) * pred_rep_penalty,
-                                                                             "repetition_window": np.ones(total_batch) * pred_rep_window,
-                                                                             "repetition_penalty_normalize": np.array([pred_rep_norm] * total_batch)})
+                                                                             "repetition_penalty": pred_rep_penalty,
+                                                                             "repetition_window": pred_rep_window})
 
 
             print('Ouput generations:', len(output[1][0][:, :, 0]))
