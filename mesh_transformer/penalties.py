@@ -11,8 +11,8 @@ def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, r
     print("logits:", logits)
     print("repetition_penalty:", repetition_penalty)
     print("repetition_window:", repetition_window)
-    
-    token_penalties = np.ones(logits.shape)
+
+    token_penalties = jnp.ones(logits.shape)
 
     prev_input_ids = jax.lax.dynamic_slice(input_ids, (0, -repetition_window), (input_ids.shape[0], repetition_window))
 
@@ -41,5 +41,8 @@ def repetition_penalty(input_ids, i, logits, options):
     repetition_penalty = options.get('repetition_penalty', 1)
     repetition_window = options.get('repetition_window', 10)
 
-    penalties = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, repetition_window)
+    rep_penalty_fn = jit(_create_next_token_logits_penalties, static_argnums=(2,3))
+
+    logits = rep_penalty_fn(input_ids, logits, repetition_penalty, repetition_window)
+
     return logits
