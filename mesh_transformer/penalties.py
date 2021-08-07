@@ -14,7 +14,7 @@ def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, r
 
     token_penalties = jnp.ones(logits.shape)
 
-    prev_input_ids = jax.lax.dynamic_slice(input_ids, (0, -repetition_window), (input_ids.shape[0], repetition_window))
+    prev_input_ids = jax.lax.dynamic_slice(input_ids, (0, -100), (input_ids.shape[0], 100))
 
     # IndexError: Array slice indices must have static start/stop/step to be used with NumPy
     # indexing syntax. To index a statically sized array at a dynamic position,try
