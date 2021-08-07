@@ -41,8 +41,6 @@ def repetition_penalty(input_ids, i, logits, options):
     repetition_penalty = options.get('repetition_penalty', 1)
     repetition_window = options.get('repetition_window', 10)
 
-    rep_penalty_fn = jit(_create_next_token_logits_penalties, static_argnums=(2,3))
-
-    logits = rep_penalty_fn(input_ids, logits, repetition_penalty, repetition_window)
+    logits = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, repetition_window)
 
     return logits
