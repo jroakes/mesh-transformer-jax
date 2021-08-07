@@ -35,7 +35,6 @@ def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, i
 
 
 
-
 def repetition_penalty(input_ids, i, logits, options):
 
     repetition_penalty = options.get('repetition_penalty', 1)
