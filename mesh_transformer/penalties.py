@@ -14,7 +14,10 @@ def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, i
 
     token_penalties = jnp.ones(logits.shape)
 
-    prev_input_ids = jax.lax.dynamic_slice(input_ids, (0, -i), (input_ids.shape[0], i))
+    if type(i) != jax.interpreters.partial_eval.DynamicJaxprTracer:
+        prev_input_ids = jax.lax.dynamic_slice(input_ids, (0, -i), (input_ids.shape[0], i))
+    else:
+        prev_input_ids = jax.lax.dynamic_slice(input_ids, (0, -100), (input_ids.shape[0], 100))
 
     # IndexError: Array slice indices must have static start/stop/step to be used with NumPy
     # indexing syntax. To index a statically sized array at a dynamic position,try
@@ -38,9 +41,6 @@ def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, i
 def repetition_penalty(input_ids, i, logits, options):
 
     repetition_penalty = options.get('repetition_penalty', 1)
-
-    if type(i) != jax.interpreters.partial_eval.DynamicJaxprTracer:
-        i = 10
 
     logits = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, i+1)
 
