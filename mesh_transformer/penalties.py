@@ -39,8 +39,9 @@ def repetition_penalty(input_ids, i, logits, options):
 
     repetition_penalty = options.get('repetition_penalty', 1)
 
-    i = jax.lax.cond(i > 0, lambda x: x, lambda x: 1, i)
+    if type(i) != jax.interpreters.partial_eval.DynamicJaxprTracer:
+        i = 10
 
-    logits = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, i)
+    logits = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, i+1)
 
     return logits
