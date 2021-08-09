@@ -77,11 +77,8 @@ class CausalTransformerShard(hk.Module):
 
     def generate_initial(self, context, length):
         # slice last token off the context (we use that in generate_once to generate the first new token)
-        initial_context = jnp.array([context])
-
         last = context[-1:]
         context = context[:-1]
-        i0 = jnp.array(0)
 
         input_len = context.shape[0]
 
@@ -99,7 +96,8 @@ class CausalTransformerShard(hk.Module):
             x = x + res
             states.append(layer_state)
 
-        return self.proj(x), (i0, last.astype(jnp.uint32), initial_context, states, hk.next_rng_key())
+        return self.proj(x), (last.astype(jnp.uint32), states, hk.next_rng_key())
+
 
     def generate_once(self, new_tok, state):
         input_len = state[0]["v"].shape[0]
@@ -199,32 +197,34 @@ class CausalTransformer:
                 transformer = CausalTransformerShard(config)
                 _, initial_state = transformer.generate_initial(context, ctx_length)
 
+                generated = jnp.full((self.batch_size, gen_length), context[-1], dtype=jnp.uint32)
+                generated_idx = 0
+
+                initial_state = (generated, generated_idx) + initial_state
+                # carry = generated, generated_index, last.astype(jnp.uint32), states, hk.next_rng_key()
+
                 def generate_scan_fn(carry, sampler_input):
                     #next_token, decode_state, sample_key = carry
-                    i, next_token, context, decode_state, sample_key = carry
+                    generated, generated_idx, next_token, decode_state, sample_key = carry
                     sample_key, new_key = jax.random.split(sample_key)
-
-                    #print('Context:')
-                    #print(context)
 
                     logits, new_state = transformer.generate_once(next_token, decode_state)
 
-                    pen_logits = penalty(context, i, logits, options)
+                    pen_logits = penalty(logits, generated, options)
 
                     next_token, sample_info = sampler(sample_key, pen_logits, sampler_input, options)
 
-                    print('Next Token:')
-                    print(next_token)
-
-                    new_context = jax.lax.dynamic_update_slice(context, next_token.reshape(1,1),
-                                             (0, i + 1))
+                    generated = generated.at[(jnp.arange(generated.shape[0]),
+                                              jnp.full(generated.shape[0],
+                                              generated_index))].set(next_token)
+                    generated_idx += 1
 
                     if self.return_logits:
                         output = (next_token, sample_info, logits)
                     else:
                         output = (next_token, sample_info)
                     #new_carry = (next_token, new_state, new_key)
-                    new_carry = (i+1, next_token, new_context, new_state, new_key)
+                    new_carry = (generated, generated_idx, next_token, new_state, new_key)
                     return new_carry, output
 
                 final_state, outputs = jax.lax.scan(generate_scan_fn, initial_state, xs=aux, length=gen_length)
@@ -345,6 +345,7 @@ class CausalTransformer:
 
         batch_size = ctx.shape[0]
         aux = jnp.zeros((batch_size, gen_length), dtype=jnp.uint32)
+        self.batch_size = batch_size
         self.gen_length = gen_length
         self.return_logits = return_logits
 

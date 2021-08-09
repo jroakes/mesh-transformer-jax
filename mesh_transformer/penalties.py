@@ -4,44 +4,20 @@ from jax import jit
 import jax.numpy as jnp
 import numpy as np
 
+# Source: https://github.com/VE-FORBRYDERNE/gpt-j-6b-filter-test/blob/da7bdfafd98096f70bd4d298f54e5aabfa00fa9e/infer.ipynb?utm_source=pocket_mylist
+def apply_penalty(logits, tokens, repetition_penalty):
 
-def _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, i):
-
-    print("input_ids:", input_ids)
-    print("logits:", logits)
-    print("repetition_penalty:", repetition_penalty)
-    print("repetition_window:", i)
-
-    token_penalties = jnp.ones(logits.shape)
-
-    if type(i) != jax.interpreters.partial_eval.DynamicJaxprTracer:
-        prev_input_ids = jax.lax.dynamic_slice(input_ids, (0, -i), (input_ids.shape[0], i))
-    else:
-        prev_input_ids = jax.lax.dynamic_slice(input_ids, (0, -100), (input_ids.shape[0], 100))
-
-    # IndexError: Array slice indices must have static start/stop/step to be used with NumPy
-    # indexing syntax. To index a statically sized array at a dynamic position,try
-    # lax.dynamic_slice/dynamic_update_slice (JAX does not support dynamically sized arrays
-    # within JIT compiled functions).
-
-    logit_penalized = logits[:, prev_input_ids]
-    logit_penalties = jnp.zeros(logit_penalized.shape)
-
-    # if previous logit score is < 0 then multiply repetition penalty else divide
-    logit_penalties = jnp.where(logit_penalized < 0, logit_penalties, repetition_penalty)
-    logit_penalties = jnp.where(logit_penalized > 0, logit_penalties, 1 / repetition_penalty)
-    token_penalties = jax.ops.index_update(token_penalties, jax.ops.index[:, prev_input_ids], logit_penalties)
-
-    logits = jnp.multiply(logits, token_penalties)
-
-    return logits
+    shift = jnp.reshape(jnp.repeat(jnp.arange(tokens.shape[0]) * logits.shape[1], tokens.shape[1]), tokens.shape)
+    penalty_logits = jnp.take(logits, tokens + shift)
+    penalty_logits = jnp.where(penalty_logits > 0, penalty_logits/repetition_penalty, penalty_logits*repetition_penalty)
+    return logits.at[(jnp.repeat(jnp.arange(penalty_logits.shape[0]), penalty_logits.shape[1]), tokens.flatten())].set(penalty_logits.flatten())
 
 
+def repetition_penalty(logits, tokens, options):
 
-def repetition_penalty(input_ids, i, logits, options):
+    repetition_penalty = options.get('repetition_penalty', None)
 
-    repetition_penalty = options.get('repetition_penalty', 1)
-
-    logits = _create_next_token_logits_penalties(input_ids, logits, repetition_penalty, i+1)
+    if repetition_penalty is not None:
+        logits = apply_penalty(logits, tokens, repetition_penalty)
 
     return logits
