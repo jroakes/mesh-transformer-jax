@@ -201,7 +201,7 @@ class CausalTransformer:
                 generated_idx = 0
 
                 initial_state = (generated, generated_idx) + initial_state
-                # carry = generated, generated_index, last.astype(jnp.uint32), states, hk.next_rng_key()
+                # carry = generated, generated_idx, last.astype(jnp.uint32), states, hk.next_rng_key()
 
                 def generate_scan_fn(carry, sampler_input):
                     #next_token, decode_state, sample_key = carry
@@ -216,7 +216,7 @@ class CausalTransformer:
 
                     generated = generated.at[(jnp.arange(generated.shape[0]),
                                               jnp.full(generated.shape[0],
-                                              generated_index))].set(next_token)
+                                              generated_idx))].set(next_token)
                     generated_idx += 1
 
                     if self.return_logits:
